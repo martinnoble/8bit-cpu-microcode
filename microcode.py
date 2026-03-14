@@ -107,81 +107,76 @@ STA - Store A Register
 
         ### Base instructions
 
-#0b11111000 : 0xF8 - NOP Implied - 1 byte
+#NOP - No OPeration - do nothing
 NOP = [ CO | MRI,   RO | IRI | CE,   CR , CR ,  CR,   CR,   CR,   CR ]
-#0b11111100 : 0xFC - HLT Implied - 1 byte
+#HLT - HaLT - stop executing instructions
 HLT = [ CO | MRI,   RO | IRI | CE,   HLT,   CR,   CR,   CR,   CR,  CR ]
 
 
         ### Jump instructions
 
-#0b0000**** : 0x0* - JMP Immediate nibble - 1 byte
+#JMP - JuMP to address given by low 4 bits of instruction
 JMP_IN = [CO | MRI,   RO | IRI | CE,   IRO | JMP | CR,   0,    0,   0,   0,   0 ]
-#0b11101100 : 0xEC - JMP Immediate - 2 byte
+#JMP - JuMP to address given by next byte
 JMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE, RO | JMP | CR,   0,   0,   0,   0 ]
 
         ### Branch instructions
 
-#0b1010**** : 0xA* - BCS Immediate nibble - 1 byte
-##JMP_IN if carry set
-#0b11110100 : 0xF4 - BCS Immediate - 2 byte
-##JMP_IM if carry set
-
-#0b1011**** : 0xB* - BEQ Immediate nibble - 1 byte
-##JMP_IN if zero set
-#0b11110000 : 0xF0 - BEQ Immediate - 2 byte
-##JMP_IM if zero set
-
-
+#BCS - Branch if Carry Set to address given by low 4 bits of instruction
+#BCC - Branch if Carry Clear to address given by low 4 bits of instruction
+#BEQ - Branch if EQual (zero set) to address given by low 4 bits of instruction
+#BNE - Branch if Not Equal (zero clear) to address given by low 4 bits of instruction
 
         ### Load instructions - place value into A register
 
-#0b0001**** : 0x1* - LDA Immediate nibble - 1 byte
+#LDA - LoaD A register with value from low 4 bits of instruction 
 LDA_IN = [CO | MRI,   RO | IRI | CE,   IRO | ARI | CR,   0,    0,   0,   0,   0 ]
-#0b11000000 : 0xC0 - LDA Absolute - 2 byte
+#LDA - LoaD A register with value from next byte
 LDA_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | ARI | CR,   0,    0,   0,   0 ]
-#0b11000000 : 0xC0 - LDA Absolute - 2 byte
+#LoaD A register with value from memory address in next byte 
 LDA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | ARI | CR,    0,   0,   0 ]
 
 
         ### Store instructions - place value from A register into memory
 
+#STA - STore value from A register into memory address given by low 4 bits of instruction
 STA_IN = [CO | MRI,   RO | IRI | CE,   IRO | MRI, ARO | RI | CR,   0,    0,   0,   0]
+#STA - STore value from A register into memory address given by next byte
 STA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI ,  ARO | RI | CR,    0,   0,   0 ]                  
 
         ### Math instructions
 
         ## Add instructions - add value to A register and place result in A register
 
-#0b0100**** : 0x4* - ADD Immediate nibble - 1 byte
+#ADD - ADD value from low 4 bits of instruction to A register
 ADD_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SO | ARI | FRI | CR,    0,    0,   0,   0 ]
-#0b11010100 : 0xD4 - ADD Immediate - 2 byte
+#ADD - ADD value from next byte to A register
 ADD_IM = [ CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SO | ARI | FRI | CR,    0,   0,   0 ]
-
+#ADD - ADD value from memory address in next byte to A register
 ADD_AB = [ CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SO | ARI | FRI | CR,    0,   0 ]   
 
         ## Subtract instructions - subtract value from A register and place result in A register
 
-#0b0110**** : 0x6* - SUB Immediate nibble - 1 byte
+#SUB - SUBtract value from low 4 bits of instruction from A register
 SUB_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SO | SUB | ARI | FRI | CR,    0,    0,   0,   0 ]
-#0b11100000 : 0xE0 - SUB Immediate - 2 byte
+#SUB - SUBtract value from next byte from A register
 SUB_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SO | SUB | ARI | FRI | CR,   0,   0,   0 ]
-
+#SUB - SUBtract value from memory address in next byte from A register
 SUB_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SO | SUB | ARI | FRI | CR,   0,   0 ]
 
         ### Compare operations - same as subtract but don't store result in A register
+        # set flags (carry and zero) as if A register was subtracted by value but don't store result in A register
 
+#CMP - CoMPare value from low 4 bits of instruction with A register
 CMP_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SUB | FRI | CR,    0,    0,   0,   0 ]
-
+#CMP - CoMPare value from next byte with A register
 CMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SUB | FRI | CR,    0,    0,   0,   0 ]
-
+#CMP - CoMPare value from memory address in next byte with A register
 CMP_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SUB | FRI | CR,    0,    0,   0 ]
 
-
-    
         ### Transfer instructions - transfer value from one register to another
 
-#0b1000**** : 0x8* - TAO Implied - 1 byte
+#TAO - Transfer A register to Output register
 TAO = [CO | MRI,   RO | IRI | CE,   ARO | ORI | CR , 0 ,  0,   0,   0,   0 ]
 
 
@@ -339,8 +334,6 @@ for instruction in range(0, 256):
                 #0b11111111 : 0xFF - HLT Implied
                 value = HLT[subinst]
 
-
-        
             CODEA[address] = (value & 0xFF) ^ DIRA
             CODEB[address] = ((value >> 8) & 0xFF) ^ DIRB
             CODEC[address] = ((value >> 16) & 0xFF) ^ DIRC
