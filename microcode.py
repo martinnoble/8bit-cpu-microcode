@@ -98,7 +98,17 @@ STA - Store A Register
 #0b11001000 : 0xC8 - ADD Absolute
 #0b11001001 : 0xC9 - SUB Absolute
 #0b11001010 : 0xCA - CMP Absolute
-#0b1101**** : 0xD* - NOP
+#0b11010000 : 0xD0 - NOP
+#0b11010001 : 0xD1 - NOP
+#0b11010010 : 0xD2 - NOP
+#0b11010011 : 0xD3 - NOP
+#0b11010100 : 0xD4 - NOP
+#0b11010101 : 0xD5 - NOP
+#0b11010110 : 0xD6 - LDA Indirect
+#0b11010111 : 0xD7 - STA Indirect
+#0b11011000 : 0xD8 - ADD Indirect
+#0b11011001 : 0xD9 - SUB Indirect
+#0b11011010 : 0xDA - NOP
 #0b1110**** : 0xE* - NOP
 #0b11110000 : 0xF0 - TAO Implied
 #0b11111111 : 0xFF - HLT Implied
@@ -108,9 +118,11 @@ STA - Store A Register
         ### Base instructions
 
 #NOP - No OPeration - do nothing
-NOP = [ CO | MRI,   RO | IRI | CE,   CR , CR ,  CR,   CR,   CR,   CR ]
+NOP = [ CO | MRI,   RO | IRI | CE,   CR , 0 ,  0,   0,   0,   0 ]
+NOP_IM = [ CO | MRI,   RO | IRI | CE,  CE | CR, 0,   0,   0,   0,   0]
+
 #HLT - HaLT - stop executing instructions
-HLT = [ CO | MRI,   RO | IRI | CE,   HLT,   CR,   CR,   CR,   CR,  CR ]
+HLT = [ CO | MRI,   RO | IRI | CE,   HLT | CR,   0,   0,   0,   0,  0 ]
 
 
         ### Jump instructions
@@ -118,7 +130,7 @@ HLT = [ CO | MRI,   RO | IRI | CE,   HLT,   CR,   CR,   CR,   CR,  CR ]
 #JMP - JuMP to address given by low 4 bits of instruction
 JMP_IN = [CO | MRI,   RO | IRI | CE,   IRO | JMP | CR,   0,    0,   0,   0,   0 ]
 #JMP - JuMP to address given by next byte
-JMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE, RO | JMP | CR,   0,   0,   0,   0 ]
+JMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI, RO | JMP | CR,   0,   0,   0,   0 ]
 
         ### Branch instructions
 
@@ -132,17 +144,21 @@ JMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE, RO | JMP | CR,   0,   0,  
 #LDA - LoaD A register with value from low 4 bits of instruction 
 LDA_IN = [CO | MRI,   RO | IRI | CE,   IRO | ARI | CR,   0,    0,   0,   0,   0 ]
 #LDA - LoaD A register with value from next byte
-LDA_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | ARI | CR,   0,    0,   0,   0 ]
+LDA_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | ARI | CE | CR,   0,    0,   0,   0 ]
 #LoaD A register with value from memory address in next byte 
-LDA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | ARI | CR,    0,   0,   0 ]
+LDA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | ARI | CR,    0,   0,   0 ]
+#LoaD A register with value from memory address which is in turn given by next byte (indirect)
+LDA_IND = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | MRI,  RO | ARI | CR,   0,   0 ]
 
 
         ### Store instructions - place value from A register into memory
 
 #STA - STore value from A register into memory address given by low 4 bits of instruction
-STA_IN = [CO | MRI,   RO | IRI | CE,   IRO | MRI, ARO | RI | CR,   0,    0,   0,   0]
+STA_IN = [CO | MRI,   RO | IRI | CE,   IRO | MRI,  ARO | RI ,   CR,    0,   0,   0]
 #STA - STore value from A register into memory address given by next byte
-STA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI ,  ARO | RI | CR,    0,   0,   0 ]                  
+STA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE ,  ARO | RI ,    CR,   0,   0 ]  
+#STA - STore value from A register into memory address which is in turn given by next byte (indirect) 
+STA_IND = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE ,  RO | MRI, 0, ARO | RI ,    CR ]
 
         ### Math instructions
 
@@ -151,18 +167,22 @@ STA_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI ,  ARO | RI | C
 #ADD - ADD value from low 4 bits of instruction to A register
 ADD_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SO | ARI | FRI | CR,    0,    0,   0,   0 ]
 #ADD - ADD value from next byte to A register
-ADD_IM = [ CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SO | ARI | FRI | CR,    0,   0,   0 ]
+ADD_IM = [ CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | BRI | CE,   SO | ARI | FRI | CR,    0,   0,   0 ]
 #ADD - ADD value from memory address in next byte to A register
-ADD_AB = [ CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SO | ARI | FRI | CR,    0,   0 ]   
+ADD_AB = [ CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | BRI,  SO | ARI | FRI | CR,    0,   0 ]   
+#ADD - ADD value from memory address which is in turn given by next byte (indirect) to A register
+ADD_IND = [ CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | MRI,  RO | BRI,  SO | ARI | FRI | CR,   0 ]
 
         ## Subtract instructions - subtract value from A register and place result in A register
 
 #SUB - SUBtract value from low 4 bits of instruction from A register
 SUB_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SO | SUB | ARI | FRI | CR,    0,    0,   0,   0 ]
 #SUB - SUBtract value from next byte from A register
-SUB_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SO | SUB | ARI | FRI | CR,   0,   0,   0 ]
+SUB_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | BRI | CE,   SO | SUB | ARI | FRI | CR,   0,   0,   0 ]
 #SUB - SUBtract value from memory address in next byte from A register
-SUB_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SO | SUB | ARI | FRI | CR,   0,   0 ]
+SUB_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | BRI,  SO | SUB | ARI | FRI | CR,   0,   0 ]
+#SUB - SUBtract value from memory address which is in turn given by next byte (indirect) from A register
+SUB_IND = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | MRI,  RO | BRI,  SO | SUB | ARI | FRI | CR,   0 ]
 
         ### Compare operations - same as subtract but don't store result in A register
         # set flags (carry and zero) as if A register was subtracted by value but don't store result in A register
@@ -170,9 +190,9 @@ SUB_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  S
 #CMP - CoMPare value from low 4 bits of instruction with A register
 CMP_IN = [CO | MRI,   RO | IRI | CE,   IRO | BRI,   SUB | FRI | CR,    0,    0,   0,   0 ]
 #CMP - CoMPare value from next byte with A register
-CMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | BRI,   SUB | FRI | CR,    0,    0,   0,   0 ]
+CMP_IM = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | BRI | CE,   SUB | FRI | CR,    0,    0,   0,   0 ]
 #CMP - CoMPare value from memory address in next byte with A register
-CMP_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI | CE,   RO | MRI,   RO | BRI,  SUB | FRI | CR,    0,    0,   0 ]
+CMP_AB = [CO | MRI,   RO | IRI | CE,   CO | MRI,   RO | MRI | CE,   RO | BRI,  SUB | FRI | CR,    0,    0,   0 ]
 
         ### Transfer instructions - transfer value from one register to another
 
@@ -185,10 +205,9 @@ CODEA = [None] * 8192
 CODEB = [None] * 8192
 CODEC = [None] * 8192
 
-for instruction in range(0, 256):
+print("Generating microcode...")
 
-    if instruction % 16 == 0:
-        print(instruction)
+for instruction in range(0, 256):
 
     for subinst in range(0, 8):
 
@@ -238,6 +257,14 @@ for instruction in range(0, 256):
 
             ### Immediate addressed opcodes
 
+            ## for BCS, BCC, BEQ and BNE, if flag condition is not met, need to run a "long NOP" to increment the program counter 
+            if ((instruction == 0b10110010)              #0b10110010 : 0xB2 - BCS Immediate
+                or (instruction == 0b10110011)                   #0b10110011 : 0xB3 - BCC Immediate
+                or (instruction == 0b10110100)                #0b10110100 : 0xB4 - BEQ Immediate
+                or (instruction == 0b10110101)                    #0b10110101 : 0xB5 - BNE Immediate
+                ):                   
+                value = NOP_IM[subinst]
+            
             #Jump Immediate instructions
             if ((instruction  == 0b10110001)                                                #0b10110001 : 0xB1 - JMP Immediate
                 or ((instruction == 0b10110010) and (flags & CARRY) == CARRY)               #0b10110010 : 0xB2 - BCS Immediate
@@ -246,32 +273,6 @@ for instruction in range(0, 256):
                 or ((instruction == 0b10110101) and (flags & ZERO) == 0)                    #0b10110101 : 0xB5 - BNE Immediate
                 ):                                            
                 value = JMP_IM[subinst]
-
-
-            #0b10110001 : 0xB1 - JMP Immediate
-            if (instruction == 0b10110001):
-                #0b10110001 : 0xB1 - JMP Immediate
-                value = JMP_IM[subinst]
-
-            #0b10110010 : 0xB2 - BCS Immediate
-            if (instruction == 0b10110010 and (flags & CARRY) == CARRY):
-                #0b10110010 : 0xB2 - BCS Immediate
-                value = JMP_IM[subinst]
-
-            #0b10110011 : 0xB3 - BCC Immediate
-            if (instruction == 0b10110011 and (flags & CARRY) == 0):
-                #0b10110011 : 0xB3 - BCC Immediate
-                value = JMP_IM[subinst]
-
-            #0b10110100 : 0xB4 - BEQ Immediate
-            if (instruction == 0b10110100 and (flags & ZERO) == ZERO):
-                #0b10110100 : 0xB4 - BEQ Immediate
-                value = JMP_IM[subinst]
-
-            #0b10110101 : 0xB5 - BNE Immediate
-            if (instruction == 0b10110101 and (flags & ZERO) == 0):
-                #0b10110101 : 0xB5 - BNE Immediate
-                value = JMP_IM[subinst] 
 
             #0b10110110 : 0xB6 - LDA Immediate
             if (instruction == 0b10110110):
@@ -322,6 +323,29 @@ for instruction in range(0, 256):
                 value = CMP_AB[subinst]
 
 
+            ### Indirect addressed opcodes
+
+            #0b11010110 : 0xD6 - LDA Indirect
+            if (instruction == 0b11010110):
+                #0b11010110 : 0xD6 - LDA Indirect
+                value = LDA_IND[subinst]
+
+            #0b11010111 : 0xD7 - STA Indirect
+            if (instruction == 0b11010111):
+                #0b11010111 : 0xD7 - STA Indirect
+                value = STA_IND[subinst]
+
+            #0b11011000 : 0xD8 - ADD Indirect
+            if (instruction == 0b11011000):
+                #0b11011000 : 0xD8 - ADD Indirect
+                value = ADD_IND[subinst]
+
+            #0b11011001 : 0xD9 - SUB Indirect
+            if (instruction == 0b11011001): 
+                #0b11011001 : 0xD9 - SUB Indirect
+                value = SUB_IND[subinst]
+
+
             ### Implied addressed opcodes
 
             #0b11110000 : 0xF0 - TAO Implied
@@ -339,14 +363,17 @@ for instruction in range(0, 256):
             CODEC[address] = ((value >> 16) & 0xFF) ^ DIRC
 
 
+print("Writing microcode: CODEA.bin")
 f=open("output/CODEA.bin","wb")
 f.write(bytearray(CODEA))
 f.close()
 
+print("Writing microcode: CODEB.bin")
 f=open("output/CODEB.bin","wb")
 f.write(bytearray(CODEB))
 f.close()
 
+print("Writing microcode: CODEC.bin")
 f=open("output/CODEC.bin","wb")
 f.write(bytearray(CODEC))
 f.close()
