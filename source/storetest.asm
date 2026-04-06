@@ -1,0 +1,3 @@
+LDA #8
+STA #7
+HLT
