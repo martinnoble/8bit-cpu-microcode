@@ -1,3 +1,29 @@
+&0
+:num_array
+&10
+:den_array
+&20
+:rem_array
+&30
+:tens_array
+&40
+:quot_array
+
+&50
+.den_pointer
+.num_pointer
+.tens_pointer
+.rem_pointer
+.quot_pointer
+.loop_count
+.counter
+.output_pointer
+
+&1
+CPY $0,#0
+
+
+
 &190 ;locate data at this starting point
 %0
 %1

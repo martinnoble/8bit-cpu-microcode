@@ -1,45 +1,64 @@
+import subprocess
+
 
 #type 0 active high, 1 active low
 DIRA = 0b11110010
 
 #decode A output lines
-HLT = 0b00000001
-MRI = 0b00000010
-RI  = 0b00000100
-RO  = 0b00001000
-IRI = 0b00010000
-IRO = 0b00100000
-ARI = 0b01000000
-ARO = 0b10000000
+HALT      = 0b00000001
+ADDR_IN   = 0b00000010
+WRITE     = 0b00000100 #rename to WRITE
+READ      = 0b00001000 #rename to READ
+I_REG_IN  = 0b00010000
+I_REG_OUT = 0b00100000 
+A_REG_IN  = 0b01000000
+A_REG_OUT = 0b10000000
 
 #type 0 active high, 1 active low
-DIRB = 0b11110101
+DIRB = 0b11110001
 
 #decode B output lines
-SO  = 0b00000001 << 8
-SUB = 0b00000010 << 8
-ORI = 0b00000100 << 8
-CE  = 0b00001000 << 8
-CO  = 0b00010000 << 8
-JMP = 0b00100000 << 8
-BRI = 0b01000000 << 8
-BRO = 0b10000000 << 8
+SUM_OUT   = 0b00000001 << 8
+SUB       = 0b00000010 << 8
+ADINC     = 0b00000100 << 8   #Address Increment by 1 - LED switched to active high, check this signal
+COUNT_EN  = 0b00001000 << 8
+COUNT_OUT = 0b00010000 << 8   #TODO: JMP_LOW for 16bit countner
+JUMP      = 0b00100000 << 8  #TODO: JMP_HIGH for 16bit counter 
+B_REG_IN  = 0b01000000 << 8
+B_REG_OUT = 0b10000000 << 8
+
+JMP_LOW  = 0
+JMP_HIGH = 0
 
 #type 0 active high, 1 active low
-DIRC = 0b10000011
+DIRC  = 0b11000111
 
 #decode C output lines
-FRI  = 0b00000001 << 16
-ROMO = 0b00000010 << 16
-UK2  = 0b00000100 << 16
-UK3  = 0b00001000 << 16
-UK4  = 0b00010000 << 16
-UK5  = 0b00100000 << 16
-UK6  = 0b01000000 << 16
-CR   = 0b10000000 << 16
+F_REG_IN  = 0b00000001 << 16
+ROM_OUT   = 0b00000010 << 16  #Address Out to bus - becomes free whem rom is memory mapped
+S_REG_IN  = 0b00000100 << 16  
+F_CLEAR   = 0b00001000 << 16
+F_SET     = 0b00010000 << 16 #LED added - check this signal
+ZERO_PAGE = 0b00100000 << 16  #LED added - check this signal
+PAGE_IN   = 0b01000000 << 16  
+CYCLE_RESET = 0b10000000 << 16  
 
-#ZP = 0
-#PRI = 0
+
+# new 4th decode block
+#type 0 active high, 1 active low
+DIRD  = 0b00000111
+
+#decode D output lines
+X_REG_IN  = 0b00000001 << 24  #X Reg in
+X_REG_OUT = 0b00000010 << 24  #X Reg out
+ADINC_X   = 0b00000100 << 24  #Address Increment by X
+UD04  = 0b00001000 << 24  
+UD05  = 0b00010000 << 24
+UD06  = 0b00100000 << 24
+UD07  = 0b01000000 << 24
+UD08  = 0b10000000 << 24  
+
+
 
 CARRY = 1
 ZERO = 2
@@ -75,22 +94,22 @@ STA - Store A Register
 #0b00000011 : 0x03 - NOP
 #0b00000100 : 0x04 - NOP
 #0b00000101 : 0x05 - NOP
-#0b00000110 : 0x06 - NOP
-#0b00000111 : 0x07 - NOP
+#0b00000110 : 0x06 - LDA Absolute Zero Page
+#0b00000111 : 0x07 - STA Absolute Zero Page
 #0b00001000 : 0x08 - NOP
 #0b00001001 : 0x09 - NOP
-#0b00001010 : 0x0A - NOP
+#0b00001010 : 0x0A - CMP Absolute Zero Page
 #0b00001011 : 0x0B - NOP
 #0b00001100 : 0x0C - NOP
 #0b00001101 : 0x0D - NOP
 #0b00001110 : 0x0E - NOP
 #0b00001111 : 0x0F - NOP
 
-#0b0001**** : 0x1* - JMP Immediate Nibble
-#0b0010**** : 0x2* - BCS Immediate Nibble
-#0b0011**** : 0x3* - BCC Immediate Nibble
-#0b0100**** : 0x4* - BEQ Immediate Nibble
-#0b0101**** : 0x5* - BNE Immediate Nibble
+#0b0001**** : 0x1* - ADC Immediate Nibble
+#0b0010**** : 0x2* - SBC Immediate Nibble
+#0b0011**** : 0x3* - NOP
+#0b0100**** : 0x4* - NOP
+#0b0101**** : 0x5* - NOP
 #0b0110**** : 0x6* - LDA Immediate Nibble
 #0b0111**** : 0x7* - STA Immediate Nibble
 #0b1000**** : 0x8* - ADD Immediate Nibble
@@ -98,7 +117,7 @@ STA - Store A Register
 #0b1010**** : 0xA* - CMP Immediate Nibble
 
 #0b10110000 : 0xB0 - NOP
-#0b10110001 : 0xB1 - JMP Immediate
+#0b10110001 : 0xB1 - JUMP Immediate
 #0b10110010 : 0xB2 - BCS Immediate 
 #0b10110011 : 0xB3 - BCC Immediate
 #0b10110100 : 0xB4 - BEQ Immediate
@@ -109,8 +128,8 @@ STA - Store A Register
 #0b10111001 : 0xB9 - SUB Immediate
 #0b10111010 : 0xBA - CMP Immediate
 #0b10111011 : 0xBB - NOP
-#0b10111100 : 0xBC - NOP
-#0b10111101 : 0xBD - NOP
+#0b10111100 : 0xBC - ADC Immediate
+#0b10111101 : 0xBD - SBC Immediate
 #0b10111110 : 0xBE - NOP
 #0b10111111 : 0xBF - NOP
 
@@ -126,8 +145,8 @@ STA - Store A Register
 #0b11001001 : 0xC9 - SUB Absolute
 #0b11001010 : 0xCA - CMP Absolute
 #0b11001011 : 0xCB - CPY Absolute
-#0b11001100 : 0xCC - NOP
-#0b11001101 : 0xCD - NOP
+#0b11001100 : 0xCC - ADC Absolute
+#0b11001101 : 0xCD - SBC Absolute
 #0b11001110 : 0xCE - NOP
 #0b11001111 : 0xCF - NOP
 
@@ -143,8 +162,8 @@ STA - Store A Register
 #0b11011001 : 0xD9 - SUB Absolute In Place
 #0b11011010 : 0xDA - NOP
 #0b11011011 : 0xDB - NOP
-#0b11011100 : 0xDC - NOP
-#0b11011101 : 0xDD - NOP
+#0b11011100 : 0xDC - ADC Absolute In Place
+#0b11011101 : 0xDD - SBC Absolute In Place
 #0b11011110 : 0xDE - NOP
 #0b11011111 : 0xDF - NOP
 
@@ -154,52 +173,52 @@ STA - Store A Register
 #0b11100011 : 0xE3 - NOP
 #0b11100100 : 0xE4 - NOP
 #0b11100101 : 0xE5 - NOP
-#0b11100110 : 0xE6 - LDA Indirect
-#0b11100111 : 0xE7 - STA Indirect
+#0b11100110 : 0xE6 - LDA Indirect Zero Page
+#0b11100111 : 0xE7 - STA Indirect Zero Page
 #0b11101000 : 0xE8 - ADD Indirect
 #0b11101001 : 0xE9 - SUB Indirect
 #0b11101010 : 0xEA - NOP
 #0b11101011 : 0xEB - NOP
-#0b11101100 : 0xEC - NOP
-#0b11101101 : 0xED - NOP
+#0b11101100 : 0xEC - ADC Indirect Zero Page
+#0b11101101 : 0xED - SBC Indirect Zero Page
 #0b11101110 : 0xEE - NOP
 #0b11101111 : 0xEF - NOP
 
-#0b11110000 : 0xF0 - TAO Implied
-#0b11110001 : 0xF1 - NOP
-#0b11110010 : 0xF2 - NOP
-#0b11110011 : 0xF3 - NOP
-#0b11110100 : 0xF4 - NOP
-#0b11110101 : 0xF5 - NOP
-#0b11110110 : 0xF6 - NOP
-#0b11110111 : 0xF7 - NOP
+#0b11110000 : 0xF0 - NOP
+#0b11110001 : 0xF1 - TAS Implied
+#0b11110010 : 0xF2 - CLF Implied
+#0b11110011 : 0xF3 - SEF Implied
+#0b11110100 : 0xF4 - TAX Implied
+#0b11110101 : 0xF5 - TXA Implied
+#0b11110110 : 0xF6 - LDA Indirect
+#0b11110111 : 0xF7 - STA Indirect
 #0b11111000 : 0xF8 - NOP
 #0b11111001 : 0xF9 - NOP
 #0b11111010 : 0xFA - NOP
 #0b11111011 : 0xFB - NOP
-#0b11111100 : 0xFC - NOP
-#0b11111101 : 0xFD - NOP
+#0b11111100 : 0xFC - ADC Indirect
+#0b11111101 : 0xFD - SBC Indirect
 #0b11111110 : 0xFE - NOP
-#0b11111111 : 0xFF - HLT Implied
+#0b11111111 : 0xFF - HALT Implied
 
 
 
         ### Base instructions
 
 #NOP - No OPeration - do nothing
-NOP    = [ ROMO | IRI | CE,     CR,         0,  0,  0,  0,  0,  0 ]
-NOP_IM = [ ROMO | IRI | CE,     CE | CR,    0,  0,  0,  0,  0,  0 ]
+NOP    = [ ROM_OUT | I_REG_IN | COUNT_EN,     CYCLE_RESET,         0,  0,  0,  0,  0,  0 ]
+NOP_IM = [ ROM_OUT | I_REG_IN | COUNT_EN,     COUNT_EN | CYCLE_RESET,    0,  0,  0,  0,  0,  0 ]
 
 #HLT - HaLT - stop executing instructions
-HLT = [ ROMO | IRI | CE,   HLT | CR,   0,   0,   0,   0,  0 , 0 ]
+HLT = [ ROM_OUT | I_REG_IN | COUNT_EN,   HALT ,   HALT,   HALT,   HALT,   HALT,  HALT , HALT ]
 
 
         ### Jump instructions
 
-#JMP - JuMP to address given by low 4 bits of instruction
-JMP_IN = [ROMO | IRI | CE,   IRO | JMP | CR,   0,    0,   0,   0,   0, 0 ]
-#JMP - JuMP to address given by next byte
-JMP_IM = [ROMO | IRI | CE,   ROMO | JMP | CR,   0,   0,   0,   0, 0, 0 ]
+#JUMP - JuMP to address given by low 4 bits of instruction
+#JMP_IN = [ROM_OUT | I_REG_IN | COUNT_EN,   I_REG_OUT | JUMP | CYCLE_RESET,   0,    0,   0,   0,   0, 0 ]
+#JUMP - JuMP to address given by next byte
+JMP_IM = [ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | JUMP | CYCLE_RESET,   0,   0,   0,   0, 0, 0 ]
 
         ### Branch instructions
 
@@ -211,81 +230,169 @@ JMP_IM = [ROMO | IRI | CE,   ROMO | JMP | CR,   0,   0,   0,   0, 0, 0 ]
         ### Load instructions - place value into A register
 
 #LDA - LoaD A register with value from low 4 bits of instruction 
-LDA_IN  = [ROMO | IRI | CE,  IRO | ARI | CR,   0,    0,   0,   0,   0, 0 ]
+LDA_IN  = [ROM_OUT | I_REG_IN | COUNT_EN,  I_REG_OUT | A_REG_IN | CYCLE_RESET,   0,    0,   0,   0,   0, 0 ]
 #LDA - LoaD A register with value from next byte
-LDA_IM  = [ROMO | IRI | CE,  ROMO | ARI | CE | CR,   0,    0,   0,   0, 0 , 0]
-#LoaD A register with value from memory address in next byte 
-LDA_AB  = [ROMO | IRI | CE,  ROMO | MRI | CE,   RO | ARI | CR,    0,   0,   0, 0, 0 ]
-#LoaD A register with value from memory address which is in turn given by next byte (indirect)
-LDA_IND = [ROMO | IRI | CE,  ROMO | MRI | CE,   RO | MRI,  RO | ARI | CR,   0,   0, 0, 0 ]
+LDA_IM  = [ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | A_REG_IN | COUNT_EN | CYCLE_RESET,   0,    0,   0,   0, 0,0 ]
+
+#LoaD A register with value from memory address in next byte (zero page)
+LDA_AB_ZP  = [ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ZERO_PAGE | READ | A_REG_IN | CYCLE_RESET,    0,   0,   0, 0, 0 ]
+
+#LoaD A register with value from memory address in next two bytes (little endian)
+LDA_AB  = [ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT | PAGE_IN | COUNT_EN, READ | A_REG_IN | CYCLE_RESET,   0,   0, 0, 0 ]
+
+
+#LoaD A register using 16bit memory address stored in zero page (indirect)
+LDA_IND_ZP = [ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,   READ | A_REG_IN | CYCLE_RESET, 0, 0 ]
+
+#LoaD A register indirect - next two bytes point to an address which contains the address of the byte to read
+LDA_IND = [ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT | PAGE_IN | COUNT_EN, READ | B_REG_IN,  ADINC | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,   READ | A_REG_IN | CYCLE_RESET, 0 ]
+
 
 
         ### Store instructions - place value from A register into memory
 
-#STA - STore value from A register into memory address given by low 4 bits of instruction
-STA_IN  = [ROMO | IRI | CE,   IRO | MRI,  ARO | RI ,   CR,    0,   0,   0, 0 ]
-#STA - STore value from A register into memory address given by next byte
-STA_AB  = [ROMO | IRI | CE,   ROMO | MRI | CE ,  ARO | RI ,    CR,   0,   0, 0, 0 ]  
-#STA - STore value from A register into memory address which is in turn given by next byte (indirect) 
-STA_IND = [ROMO | IRI | CE,   ROMO | MRI | CE ,  RO | MRI, ARO | RI , CR , 0, 0, 0 ]
+#STA - STore value from A register into memory address given by low 4 bits of instruction - implies zero page
+#TODO: is this actually used in the assembler / necessary?
+STA_IN  = [ROM_OUT | I_REG_IN | COUNT_EN,   I_REG_OUT | ADDR_IN,  ZERO_PAGE | A_REG_OUT | WRITE | CYCLE_RESET,    0,   0,   0, 0 ,0]
+
+#STA - STore value from A register into memory address given by next byte (zero page)
+STA_AB_ZP  = [ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | ADDR_IN | COUNT_EN ,  ZERO_PAGE | A_REG_OUT | WRITE | CYCLE_RESET,   0, 0, 0 ,0, 0]  
+
+#STA - STore value from A register into memory address given by next type bytes (little endian)
+STA_AB  =    [ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | ADDR_IN | COUNT_EN ,  ROM_OUT | PAGE_IN | COUNT_EN, A_REG_OUT | WRITE | CYCLE_RESET, 0, 0, 0, 0 ]  
+
+#STA - STore value from A register into memory address which is in turn given by next byte (indirect zero page) 
+STA_IND_ZP = [ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | ADDR_IN | COUNT_EN ,  ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,  A_REG_OUT | WRITE | CYCLE_RESET, 0 ,0]
+
+#STA - STore value from A register into memory address which is in turn given by next two byte (indirect) 
+STA_IND = [ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | ADDR_IN | COUNT_EN ,  ROM_OUT | PAGE_IN | COUNT_EN, READ | B_REG_IN,  ADINC | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,   A_REG_OUT | WRITE | CYCLE_RESET, 0]
 
         ### Math instructions
 
         ## Add instructions - add value to A register and place result in A register
 
-### Note: Mutli byte addition should be possible as the Carry flag does flow around.  No way to pre-set the carry flag without performing a math or compare operation
-### Note: Multi byte subtraction likely won't work as carry is always set in this case from the "sub" control line, irrespective of the state of the carry flag from previous operations
+#ADD - resets carry flag before add
 
 #ADD - ADD INstruction - add value from low 4 bits of instruction to A register
-ADD_IN  = [ ROMO | IRI | CE,  IRO | BRI,   SO | ARI | FRI | CR,    0,    0,   0,   0, 0 ]
+ADD_IN  = [ ROM_OUT | I_REG_IN | COUNT_EN,  I_REG_OUT | F_CLEAR | F_REG_IN | B_REG_IN,   SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
+
 #ADD - ADD IMmediate - add value from next byte to A register
-ADD_IM  = [ ROMO | IRI | CE,  ROMO | BRI | CE,   SO | ARI | FRI | CR,    0,   0,   0, 0, 0 ]
+ADD_IM  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_CLEAR | F_REG_IN | B_REG_IN | COUNT_EN,   SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,   0,   0, 0, 0 ]
+
+#TODO: implement ADD_AB_ZP
 #ADD - ADD ABsolute - add value from memory address in next byte to A register
-ADD_AB  = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | BRI,  SO | ARI | FRI | CR,    0,   0, 0, 0 ]  
+ADD_AB  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_CLEAR | F_REG_IN | ADDR_IN | COUNT_EN,   ROM_OUT | PAGE_IN | COUNT_EN, READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,   0, 0]  
 
-#ADD - ADD ABsolute In Place - equivalent of a LDA, ADD and STA all in one. LDA value from memory address in next byte, ADD the value in the byte after, and Store the result back to the original location.
-ADD_AB_IP = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | ARI | CE,  ROMO | BRI, SO | RI | ARI | FRI | CR,    0,   0, 0 ]
+#TODO: implement ADD_AB_IP_ZP
+#ADD - ADD ABsolute In Place - equivalent of a LDA, ADD and STA all in one. LDA value from memory address in next two bytes, ADD the value in the third byte, and Store the result back to the original location.
+ADD_AB_IP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_CLEAR | F_REG_IN | ADDR_IN | COUNT_EN,  ROM_OUT | PAGE_IN | COUNT_EN, READ | A_REG_IN,  ROM_OUT | B_REG_IN | COUNT_EN, SUM_OUT | A_REG_IN | F_REG_IN, A_REG_OUT | WRITE | CYCLE_RESET, 0]
 
-#ADD - ADD INDirect - add value from memory address which is in turn given by next byte (indirect) to A register
-ADD_IND = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | MRI,  RO | BRI,  SO | ARI | FRI | CR,   0, 0, 0 ]
+#ADD - ADD INDirect - add value from memory address which is in turn given by next byte (indirect zero page) to A register
+ADD_IND_ZP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_CLEAR | F_REG_IN | ADDR_IN | COUNT_EN,   ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN, B_REG_OUT | ADDR_IN,   READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET, 0 ]
 
+#ADD - ADD INDirect - add value from memory address which is in turn given by next two bytes (indirect) to A register
+ADD_IND = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_CLEAR | F_REG_IN | ADDR_IN | COUNT_EN,   ROM_OUT | PAGE_IN | COUNT_EN,  READ | B_REG_IN,  ADINC | READ | PAGE_IN, B_REG_OUT | ADDR_IN,   READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET]
+
+
+#ADC - ADd with Carry - respects carry flag to support multi byte maths
+
+#ADC - ADd with Carry INstruction - add value from low 4 bits of instruction to A register
+ADC_IN  = [ ROM_OUT | I_REG_IN | COUNT_EN,  I_REG_OUT | B_REG_IN,   SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
+
+#ADC - ADd with Carry IMmediate - add value from next byte to A register
+ADC_IM  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | B_REG_IN | COUNT_EN,   SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,   0,   0, 0, 0 ]
+
+#TODO: implement ADC_AB_ZP
+#ADC - ADd with Carry ABsolute - add value from memory address in next byte to A register
+ADC_AB  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT  | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,   0, 0, 0 ]  
+
+#TODO: implement ADC_AB_IP_ZP
+#ADC - ADd with Carry ABsolute In Place - equivalent of a LDA, ADD and STA all in one. LDA value from memory address in next byte, ADD the value in the byte after, and Store the result back to the original location.
+ADC_AB_IP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | A_REG_IN,  ROM_OUT | B_REG_IN | COUNT_EN, SUM_OUT | A_REG_IN | F_REG_IN, A_REG_OUT | WRITE | CYCLE_RESET, 0,    0, 0 ,0]
+
+#ADC - ADd with Carry INDirect - add value from memory address which is in turn given by next byte (indirect) to A register
+ADC_IND = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN, ADINC | READ | PAGE_IN, B_REG_OUT | ADDR_IN,  READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET]
+
+ADC_IND_ZP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN, B_REG_OUT | ADDR_IN,   READ | B_REG_IN,  SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET, 0 ]
 
         ## Subtract instructions - subtract value from A register and place result in A register
 
 #SUB - SUBtract value from low 4 bits of instruction from A register
-SUB_IN  = [ ROMO | IRI | CE,  IRO | BRI,   SO | SUB | ARI | FRI | CR,    0,    0,   0,   0, 0 ]
+SUB_IN  = [ ROM_OUT | I_REG_IN | COUNT_EN,  I_REG_OUT | F_SET | F_REG_IN | B_REG_IN,   SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
 #SUB - SUBtract value from next byte from A register
-SUB_IM  = [ ROMO | IRI | CE,  ROMO | BRI | CE,   SO | SUB | ARI | FRI | CR,   0,   0,   0, 0, 0 ]
+SUB_IM  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_SET | F_REG_IN | B_REG_IN | COUNT_EN,   SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,   0,   0, 0, 0, 0, 0 ]
+#TODO: implement SUB_AB_ZP
 #SUB - SUBtract value from memory address in next byte from A register
-SUB_AB  = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | BRI,  SO | SUB | ARI | FRI | CR,   0,   0, 0, 0 ]
+SUB_AB  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_SET | F_REG_IN | ADDR_IN | COUNT_EN,    ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN,  SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,   0,   0, 0 ]
+#TODO: implement SUB_AB_IP_ZP
 #SUB - SUBtract Absolute In Place - equivalent of a LDA, SUB and STA all in one. LDA value from memory address in next byte, SUB the value in the byte after, and Store the result back to the original location.
-SUB_AB_IP = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | ARI | CE,  ROMO | BRI, SO | SUB |RI | ARI | FRI | CR,    0,   0, 0 ]
+SUB_AB_IP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_SET | F_REG_IN | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | A_REG_IN,  ROM_OUT | B_REG_IN | COUNT_EN, SUM_OUT | SUB | A_REG_IN | F_REG_IN, A_REG_OUT | WRITE | CYCLE_RESET,0,   0 ]
+#TODO: implement SUB_IND_ZP
 #SUB - SUBtract value from memory address which is in turn given by next byte (indirect) from A register
-SUB_IND = [ ROMO | IRI | CE,  ROMO | MRI | CE,   RO | MRI,  RO | BRI,  SO | SUB | ARI | FRI | CR,   0, 0, 0 ]
+SUB_IND = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | F_SET | F_REG_IN | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN, ADINC | READ | PAGE_IN, B_REG_OUT | ADDR_IN,  READ | B_REG_IN,  SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET ]
+
+
+#SBC - SuBtract with Carry value from low 4 bits of instruction from A register
+SBC_IN  = [ ROM_OUT | I_REG_IN | COUNT_EN,  I_REG_OUT | B_REG_IN,   SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
+#SBC - SuBtract with Carry value from next byte from A register
+SBC_IM  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | B_REG_IN | COUNT_EN,   SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,   0,   0,   0, 0, 0 ]
+#TODO: implement SBC_AB_ZP
+#SBC - SuBtract with Carry value from memory address in next byte from A register
+SBC_AB  = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN,  SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET,   0,   0, 0 ]
+#TODO: implement SBC_AB_IP_ZP
+#SBC - SuBtract with Carry Absolute In Place - equivalent of a LDA, SUB and STA all in one. LDA value from memory address in next byte, SUB the value in the byte after, and Store the result back to the original location.
+SBC_AB_IP = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | A_REG_IN,  ROM_OUT | B_REG_IN | COUNT_EN, SUM_OUT | SUB | A_REG_IN | F_REG_IN, A_REG_OUT | WRITE | CYCLE_RESET, 0,   0 ]
+#TODO: implement SBC_IND_ZP
+#SBC - SuBtract with Carry value from memory address which is in turn given by next byte (indirect) from A register
+SBC_IND = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,   ROM_OUT  | PAGE_IN | COUNT_EN, READ | B_REG_IN, ADINC | READ | PAGE_IN, B_REG_OUT | ADDR_IN,  READ | B_REG_IN,  SUM_OUT | SUB | A_REG_IN | F_REG_IN | CYCLE_RESET ]
 
         ### Compare operations - same as subtract but don't store result in A register
         # set flags (carry and zero) as if A register was subtracted by value but don't store result in A register
-
 #CMP - CoMPare value from low 4 bits of instruction with A register
-CMP_IN = [ ROMO | IRI | CE,   IRO | BRI,   SUB | FRI | CR,    0,    0,   0,   0, 0 ]
+CMP_IN = [ ROM_OUT | I_REG_IN | COUNT_EN,   F_SET | F_REG_IN | I_REG_OUT | B_REG_IN,   SUB | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
 #CMP - CoMPare value from next byte with A register
-CMP_IM = [ ROMO | IRI | CE,   ROMO | BRI | CE,   SUB | FRI | CR,    0,    0,   0,   0, 0 ]
+CMP_IM = [ ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | F_SET | F_REG_IN | B_REG_IN | COUNT_EN,   SUB | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
+
 #CMP - CoMPare value from memory address in next byte with A register
-CMP_AB = [ ROMO | IRI | CE,   ROMO | MRI | CE,   RO | BRI,  SUB | FRI | CR,    0,    0,   0, 0 ]
+CMP_AB_ZP = [ ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | F_SET | F_REG_IN | ADDR_IN | COUNT_EN,  ZERO_PAGE | READ | B_REG_IN,  SUB | F_REG_IN | CYCLE_RESET,    0,    0,   0, 0 ]
+
+#CMP - CoMPare value from memory address in next byte with A register
+CMP_AB = [ ROM_OUT | I_REG_IN | COUNT_EN,   ROM_OUT | F_SET | F_REG_IN | ADDR_IN | COUNT_EN,   ROM_OUT | PAGE_IN | COUNT_EN, READ | B_REG_IN,  SUB | F_REG_IN | CYCLE_RESET,    0,    0,   0 ]
 
         ### Transfer instructions - transfer value from one register to another
 
 #CPY - CoPY value from ROM to RAM. Address given by the next byte, value given by 3rd byte.
-CPY_AB = [ ROMO | IRI | CE,  ROMO | MRI | CE,  ROMO | RI | CE | CR,    0,    0,   0, 0, 0 ]
+CPY_AB = [ ROM_OUT | I_REG_IN | COUNT_EN,  ROM_OUT | ADDR_IN | COUNT_EN,  ROM_OUT | WRITE | COUNT_EN | CYCLE_RESET,    0,    0,   0, 0, 0 ]
+
+#CPY_IND - CoPY value from ROM to RAM. Address given by the next byte, value given by 3rd byte. Indirect version where address of value is given by the next byte.
 
 #TAO - Transfer A register to Output register
-TAO = [ROMO | IRI | CE,   ARO | ORI | CR , 0 ,  0,   0,   0,   0, 0 ]
+#REMOVED - output by memory mapped
+#TAO = [ ROM_OUT | I_REG_IN | COUNT_EN,   A_REG_OUT | ORI | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ]
+
+#Transfer A register to Status register
+TAS = [ ROM_OUT | I_REG_IN | COUNT_EN,   A_REG_OUT | S_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ] 
+
+#Tranfer A register to X register
+TAX = [ ROM_OUT | I_REG_IN | COUNT_EN,   A_REG_OUT | X_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ] 
+
+#Transfer X register to A register
+TXA = [ ROM_OUT | I_REG_IN | COUNT_EN,   X_REG_OUT | A_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ] 
 
 
+#CLear Flags - clear carry and zero flags
+CLF = [ ROM_OUT | I_REG_IN | COUNT_EN,   F_CLEAR | F_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ]
 
-CODEA = [None] * 8192
-CODEB = [None] * 8192
-CODEC = [None] * 8192
+#SEt Flags - set carry and zero flags
+SEF = [ ROM_OUT | I_REG_IN | COUNT_EN,   F_SET | F_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0,   0, 0 ]
+
+
+RST = [ JMP_LOW, JMP_HIGH | CYCLE_RESET,   0,   0,   0,   0, 0, 0 ]
+
+CODEA: list[int] = [0] * 65536
+CODEB: list[int] = [0] * 65536
+CODEC: list[int] = [0] * 65536
+CODED: list[int] = [0] * 65536
 
 print("Generating microcode...")
 
@@ -300,40 +407,49 @@ for instruction in range(0, 256):
             #default all instructions to NOP
             value = NOP[subinst]
 
+
+            ### Zero Page Absolute
+
+            #0b00000110 : 0x06 - LDA Absolute Zero Page
+            if (instruction == 0b00000110):
+                value = LDA_AB_ZP[subinst]
+
+            #0b00000111 : 0x07 - STA Absolute Zero Page
+            if (instruction == 0b00000111):
+                value = STA_AB_ZP[subinst]
+
+            #0b00001010 : 0x0A - CMP Absolute Zero Page
+            if (instruction == 0b00001010):
+                value = CMP_AB_ZP[subinst]
+
             ### Instruction addressed opcodes
 
-            #Jump  
-            if (((instruction & 0b11110000) == 0b00010000)                                  #0b0001**** : 0x1* - JMP Instruction
-                or ((instruction & 0b11110000) == 0b00100000 and (flags & CARRY) == CARRY)  #0b0010**** : 0x2* - BCS Instruction
-                or ((instruction & 0b11110000) == 0b00110000 and (flags & CARRY) == 0)      #0b0011**** : 0x3* - BCC Instruction
-                or ((instruction & 0b11110000) == 0b01000000 and (flags & ZERO) == ZERO)    #0b0100**** : 0x4* - BEQ Instruction
-                or ((instruction & 0b11110000) == 0b01010000 and (flags & ZERO) == 0)       #0b0101**** : 0x5* - BNE Instruction
-                ):
-                value = JMP_IN[subinst]
+            #0b0001**** : 0x1* - ADC Instruction
+            if ((instruction & 0b11110000) == 0b00010000):
+                value = ADC_IN[subinst]
+
+            #0b0010**** : 0x2* - SBC Instruction
+            if ((instruction & 0b11110000) == 0b00100000):
+                value = SBC_IN[subinst]
 
             #0b0110**** : 0x6* - LDA Instruction
             if ((instruction & 0b11110000) == 0b01100000):
-                #0b0110**** : 0x6* - LDA Instruction
                 value = LDA_IN[subinst]
 
             #0b0111**** : 0x7* - STA Instruction
             if ((instruction & 0b11110000) == 0b01110000):
-                #0b0111**** : 0x7* - STA Instruction
                 value = STA_IN[subinst]
 
             #0b1000**** : 0x8* - ADD Instruction
             if ((instruction & 0b11110000) == 0b10000000):
-                #0b1000**** : 0x8* - ADD Instruction
                 value = ADD_IN[subinst]
 
             #0b1001**** : 0x9* - SUB Instruction
             if ((instruction & 0b11110000) == 0b10010000):
-                #0b1001**** : 0x9* - SUB Instruction
                 value = SUB_IN[subinst]
 
             #0b1010**** : 0xA* - CMP Instruction
             if ((instruction & 0b11110000) == 0b10100000):
-                #0b1010**** : 0xA* - CMP Instruction
                 value = CMP_IN[subinst]
 
 
@@ -348,7 +464,7 @@ for instruction in range(0, 256):
                 value = NOP_IM[subinst]
             
             #Jump Immediate instructions
-            if ((instruction  == 0b10110001)                                                #0b10110001 : 0xB1 - JMP Immediate
+            if ((instruction  == 0b10110001)                                                #0b10110001 : 0xB1 - JUMP Immediate
                 or ((instruction == 0b10110010) and (flags & CARRY) == CARRY)               #0b10110010 : 0xB2 - BCS Immediate
                 or ((instruction == 0b10110011) and (flags & CARRY) == 0)                   #0b10110011 : 0xB3 - BCC Immediate
                 or ((instruction == 0b10110100) and (flags & ZERO) == ZERO)                 #0b10110100 : 0xB4 - BEQ Immediate
@@ -358,109 +474,165 @@ for instruction in range(0, 256):
 
             #0b10110110 : 0xB6 - LDA Immediate
             if (instruction == 0b10110110):
-                #0b10110110 : 0xB6 - LDA Immediate
                 value = LDA_IM[subinst]
 
             #0b10111000 : 0xB8 - ADD Immediate
             if (instruction == 0b10111000):
-                #0b10111000 : 0xB8 - ADD Immediate
                 value = ADD_IM[subinst]
 
             #0b10111001 : 0xB9 - SUB Immediate
             if (instruction == 0b10111001):
-                #0b10111001 : 0xB9 - SUB Immediate
                 value = SUB_IM[subinst]
 
             #0b10111010 : 0xBA - CMP Immediate
             if (instruction == 0b10111010):
-                #0b10111010 : 0xBA - CMP Immediate
                 value = CMP_IM[subinst]
 
+            #0b10111100 : 0xBC - ADC Immediate
+            if (instruction == 0b10111100):
+                value = ADC_IM[subinst]
+
+            #0b10111101 : 0xBD - SBC Immediate
+            if (instruction == 0b10111101):
+                value = SBC_IM[subinst]
 
             ### Absolute addressed opcodes
 
             #0b11000110 : 0xC6 - LDA Absolute
             if (instruction == 0b11000110):
-                #0b11000110 : 0xC6 - LDA Absolute
                 value = LDA_AB[subinst]
 
             #0b11000111 : 0xC7 - STA Absolute
             if (instruction == 0b11000111):
-                #0b11000111 : 0xC7 - STA Absolute
                 value = STA_AB[subinst]
 
             #0b11001000 : 0xC8 - ADD Absolute
             if (instruction == 0b11001000):
-                #0b11001000 : 0xC8 - ADD Absolute
                 value = ADD_AB[subinst]
 
             #0b11001001 : 0xC9 - SUB Absolute
             if (instruction == 0b11001001):
-                #0b11001001 : 0xC9 - SUB Absolute
                 value = SUB_AB[subinst]
 
             #0b11001010 : 0xCA - CMP Absolute
             if (instruction == 0b11001010):
-                #0b11001010 : 0xCA - CMP Absolute
                 value = CMP_AB[subinst]
 
             #0b11001011 : 0xCB - CPY Absolute
             if (instruction == 0b11001011):
-                #0b11001011 : 0xCB - CPY Absolute
                 value = CPY_AB[subinst]
+
+
+            #0b11001100 : 0xCC - ADC Absolute
+            if (instruction == 0b11001100):
+                value = ADC_AB[subinst]
+
+            #0b11001101 : 0xCD - SBC Absolute
+            if (instruction == 0b11001101):
+                value = SBC_AB[subinst]
+
 
 
             ### Absolute In Place opcodes
 
             #0b11011000 : 0xD8 - ADD Absolute In Place
             if (instruction == 0b11011000):
-                #0b11011000 : 0xD8 - ADD Absolute In Place
                 value = ADD_AB_IP[subinst]
 
             #0b11011001 : 0xD9 - SUB Absolute In Place
             if (instruction == 0b11011001):
-                #0b11011001 : 0xD9 - SUB Absolute In Place
                 value = SUB_AB_IP[subinst]
+
+            #0b11011100 : 0xDC - ADC Absolute In Place
+            if (instruction == 0b11011100):
+                value = ADC_AB_IP[subinst]
+
+            #0b11011101 : 0xDD - SBC Absolute In Place
+            if (instruction == 0b11011101):
+                value = SBC_AB_IP[subinst]
+
+
 
 
             ### Indirect addressed opcodes
 
-            #0b11100110 : 0xE6 - LDA Indirect
+            #0b11100110 : 0xE6 - LDA Indirect Zero Page
             if (instruction == 0b11100110):
-                #0b11100110 : 0xE6 - LDA Indirect
+                value = LDA_IND_ZP[subinst]
+
+            #0b11110110 : 0xF6 - LDA Indirect
+            if (instruction == 0b11110110):
                 value = LDA_IND[subinst]
 
-            #0b11100111 : 0xE7 - STA Indirect
+            #0b11100111 : 0xE7 - STA Indirect Zero Page
             if (instruction == 0b11100111):
-                #0b11100111 : 0xE7 - STA Indirect
+                value = STA_IND_ZP[subinst]
+
+            #0b11110111 : 0xF7 - STA Indirect
+            if (instruction == 0b11110111):
                 value = STA_IND[subinst]
 
             #0b11101000 : 0xE8 - ADD Indirect
             if (instruction == 0b11101000):
-                #0b11101000 : 0xE8 - ADD Indirect
                 value = ADD_IND[subinst]
 
             #0b11101001 : 0xE9 - SUB Indirect
             if (instruction == 0b11101001): 
-                #0b11101001 : 0xE9 - SUB Indirect
                 value = SUB_IND[subinst]
+
+            #0b11101100 : 0xEC - ADC Indirect Zerp Page
+            if (instruction == 0b11101100): 
+                value = ADC_IND_ZP[subinst]
+
+            #0b11111100 : 0xFC - ADC Indirect
+            if (instruction == 0b11111100): 
+                value = ADC_IND[subinst]
+
+            #0b11101101 : 0xED - SBC Indirect
+            if (instruction == 0b11101101): 
+                value = SBC_IND[subinst]
+
 
 
             ### Implied addressed opcodes
 
+            #TAO REMOVED - output now memory mapped
             #0b11110000 : 0xF0 - TAO Implied
-            if (instruction == 0b11110000):
-                #0b11110000 : 0xF0 - TAO Implied
-                value = TAO[subinst]
+            #if (instruction == 0b11110000):
+            #    #0b11110000 : 0xF0 - TAO Implied
+            #    value = TAO[subinst]
 
-            #0b11111111 : 0xFF - HLT Implied
+            #0b11110001 : 0xF1 - TAS Implied
+            if (instruction == 0b11110001):
+                value = TAS[subinst]
+
+            #0b11110010 : 0xF2 - CLF Implied
+            if (instruction == 0b11110010):
+                value = CLF[subinst]
+
+            #0b11110011 : 0xF3 - SEF Implied
+            if (instruction == 0b11110011):
+                value = SEF[subinst]
+
+
+            #0b11110100 : 0xF4 - TAX Implied
+            if (instruction == 0b11110100):
+                value = TAX[subinst]
+
+            #0b11110101 : 0xF5 - TXA Implied
+            if (instruction == 0b11110101):
+                value = TXA[subinst]
+
+
+            #0b11111111 : 0xFF - HALT Implied
             if (instruction == 0b11111111):
-                #0b11111111 : 0xFF - HLT Implied
                 value = HLT[subinst]
+
 
             CODEA[address] = (value & 0xFF) ^ DIRA
             CODEB[address] = ((value >> 8) & 0xFF) ^ DIRB
             CODEC[address] = ((value >> 16) & 0xFF) ^ DIRC
+            CODED[address] = ((value >> 24) & 0xFF) ^ DIRD
 
 
 print("Writing microcode: CODEA.bin")
@@ -477,3 +649,25 @@ print("Writing microcode: CODEC.bin")
 f=open("microcode/CODEC.bin","wb")
 f.write(bytearray(CODEC))
 f.close()
+
+print("Writing microcode: CODED.bin")
+f=open("microcode/CODED.bin","wb")
+f.write(bytearray(CODED))
+f.close()
+
+
+answer = input("Program CODE A?")
+if answer.upper() in ["Y", "YES"]:
+    ret = subprocess.run(["minipro", "-p", "W27C512@DIP28", "-w", "microcode/CODEA.bin"])
+
+answer = input("Program CODE B?")
+if answer.upper() in ["Y", "YES"]:
+    ret = subprocess.run(["minipro", "-p", "W27C512@DIP28", "-w", "microcode/CODEB.bin"])
+
+answer = input("Program CODE C?")
+if answer.upper() in ["Y", "YES"]:
+    ret = subprocess.run(["minipro", "-p", "W27C512@DIP28", "-w", "microcode/CODEC.bin"])
+
+answer = input("Program CODE D?")
+if answer.upper() in ["Y", "YES"]:
+    ret = subprocess.run(["minipro", "-p", "W27C512@DIP28", "-w", "microcode/CODED.bin"])
