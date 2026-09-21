@@ -1,0 +1,7 @@
+LDA #10
+TAP
+TAP
+TAP
+TAP
+TAP
+TAP

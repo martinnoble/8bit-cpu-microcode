@@ -1,0 +1,11 @@
+
+LDA 'A'
+STA #$0x6000
+LDA 'B'
+STA #$0x6000
+LDA 'C'
+STA #$0x6000
+LDA '\n'
+STA #$0x6000
+
+

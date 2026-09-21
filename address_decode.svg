@@ -1,0 +1,301 @@
+<svg viewBox="0 0 900 740" xmlns="http://www.w3.org/2000/svg" width="900" height="740"
+     font-family="Arial, Helvetica, sans-serif" font-size="12">
+<defs>
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+    <path d="M0,0 L0,8 L8,4Z" fill="#334155"/>
+  </marker>
+</defs>
+
+<!-- background -->
+<rect width="900" height="740" fill="#f8fafc"/>
+
+<!-- ── Title ── -->
+<rect x="0" y="0" width="900" height="44" fill="#1e293b"/>
+<text x="450" y="17" text-anchor="middle" font-size="13" font-weight="bold" fill="#f1f5f9">Address Decode — Block Diagram</text>
+<text x="450" y="34" text-anchor="middle" font-size="10" fill="#94a3b8">74LS32 OR · 74HC04 NOT · 74HC08 AND · 74HC138 decoder · active-low /RD, /WR</text>
+
+<!-- ════════════════════════════════════════════════════════
+     COLUMN HEADERS (y=52)
+════════════════════════════════════════════════════════ -->
+<!-- Column x-centres: inputs=60, IC2=200, IC3=370, IC4=540, outputs=760 -->
+
+<rect x="10"  y="52" width="100" height="22" rx="3" fill="#e2e8f0"/>
+<text x="60"  y="67" text-anchor="middle" font-size="10" font-weight="bold" fill="#475569">INPUTS</text>
+
+<rect x="150" y="52" width="110" height="22" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+<text x="205" y="67" text-anchor="middle" font-size="10" font-weight="bold" fill="#15803d">IC2 · 74LS32</text>
+
+<rect x="310" y="52" width="110" height="22" rx="3" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+<text x="365" y="67" text-anchor="middle" font-size="10" font-weight="bold" fill="#6d28d9">IC3 · 74HC04</text>
+
+<rect x="470" y="52" width="110" height="22" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+<text x="525" y="67" text-anchor="middle" font-size="10" font-weight="bold" fill="#92400e">IC4 · 74HC08</text>
+
+<rect x="660" y="52" width="220" height="22" rx="3" fill="#e2e8f0"/>
+<text x="770" y="67" text-anchor="middle" font-size="10" font-weight="bold" fill="#475569">OUTPUTS</text>
+
+<!-- vertical dividers -->
+<line x1="140" y1="52" x2="140" y2="720" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="300" y1="52" x2="300" y2="720" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="460" y1="52" x2="460" y2="720" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="650" y1="52" x2="650" y2="720" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3"/>
+
+<!-- ════════════════════════════════════════════════════════
+  HELPER MACROS (drawn inline):
+  Gate box: rect 80×26 centred at (cx, cy)
+  Input chip box: rect 110×26
+  Output box: rect 160×26
+
+  Row y-centres:
+    R1  y=110   RAM_READ
+    R2  y=180   RAM_WRITE
+    R3  y=250   /ROM_READ
+    R4  y=340   IO_WR_H  (intermediate)
+    R5a y=430   /OUTPUT_WRITE step 1  (NOT A1 + AND)
+    R5b y=490   /OUTPUT_WRITE step 2  (NOT X)
+    R6a y=580   PRINTER_WRITE step 1  (AND IO_WR_H + A1)
+    R6b y=640   PRINTER_WRITE step 2  (AND P1 + /A0, with NOT A0 inline)
+════════════════════════════════════════════════════════ -->
+
+<!-- ══ ROW SEPARATOR LABELS (left margin) ══ -->
+<text x="6" y="102" font-size="9" font-weight="bold" fill="#64748b">RAM_READ</text>
+<text x="6" y="172" font-size="9" font-weight="bold" fill="#64748b">RAM_WRITE</text>
+<text x="6" y="242" font-size="9" font-weight="bold" fill="#64748b">/ROM_READ</text>
+<text x="6" y="322" font-size="9" font-weight="bold" fill="#64748b">IO_WR_H</text>
+<text x="6" y="412" font-size="9" font-weight="bold" fill="#64748b">/OUTPUT</text>
+<text x="6" y="422" font-size="9" font-weight="bold" fill="#64748b">_WRITE</text>
+<text x="6" y="565" font-size="9" font-weight="bold" fill="#64748b">PRINTER</text>
+<text x="6" y="575" font-size="9" font-weight="bold" fill="#64748b">_WRITE</text>
+
+<!-- thin row dividers -->
+<line x1="140" y1="145" x2="900" y2="145" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="140" y1="215" x2="900" y2="215" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="140" y1="285" x2="900" y2="285" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="140" y1="385" x2="900" y2="385" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="140" y1="545" x2="900" y2="545" stroke="#e2e8f0" stroke-width="1"/>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 1 — RAM_READ
+     /RAM_SEL ─┐
+               ├─[OR G1]──[NOT G1]──► RAM_READ (HIGH)
+     /RD ──────┘
+════════════════════════════════════════════════════════ -->
+
+<!-- Input signals -->
+<text x="140" y="104" text-anchor="end" font-size="11" fill="#1d4ed8" font-weight="bold">/RAM_SEL</text>
+<text x="140" y="119" text-anchor="end" font-size="11" fill="#334155">/RD</text>
+
+<!-- OR gate box G1 -->
+<rect x="152" y="94" width="88" height="34" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="196" y="107" text-anchor="middle" font-size="9" font-weight="bold" fill="#15803d">IC2-G1</text>
+<text x="196" y="120" text-anchor="middle" font-size="10" fill="#15803d">OR</text>
+
+<!-- wire: inputs → OR box (short stubs) -->
+<line x1="142" y1="104" x2="152" y2="104" stroke="#1d4ed8" stroke-width="1.5"/>
+<line x1="142" y1="119" x2="152" y2="119" stroke="#334155" stroke-width="1.5"/>
+
+<!-- wire: OR → NOT -->
+<line x1="240" y1="111" x2="312" y2="111" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- NOT gate box G1 -->
+<rect x="312" y="94" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="107" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G1</text>
+<text x="356" y="120" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<!-- wire: NOT → output -->
+<line x1="400" y1="111" x2="655" y2="111" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- output label -->
+<rect x="657" y="96" width="218" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="766" y="116" text-anchor="middle" font-size="11" font-weight="bold" fill="#15803d">RAM_READ  (HIGH)</text>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 2 — RAM_WRITE
+     /RAM_SEL ─┐
+               ├─[OR G2]──[NOT G2]──► RAM_WRITE (HIGH)
+     /WR ──────┘
+════════════════════════════════════════════════════════ -->
+<text x="140" y="174" text-anchor="end" font-size="11" fill="#1d4ed8" font-weight="bold">/RAM_SEL</text>
+<text x="140" y="189" text-anchor="end" font-size="11" fill="#334155">/WR</text>
+
+<rect x="152" y="164" width="88" height="34" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="196" y="177" text-anchor="middle" font-size="9" font-weight="bold" fill="#15803d">IC2-G2</text>
+<text x="196" y="190" text-anchor="middle" font-size="10" fill="#15803d">OR</text>
+
+<line x1="142" y1="174" x2="152" y2="174" stroke="#1d4ed8" stroke-width="1.5"/>
+<line x1="142" y1="189" x2="152" y2="189" stroke="#334155" stroke-width="1.5"/>
+<line x1="240" y1="181" x2="312" y2="181" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<rect x="312" y="164" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="177" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G2</text>
+<text x="356" y="190" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<line x1="400" y1="181" x2="655" y2="181" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<rect x="657" y="166" width="218" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="766" y="186" text-anchor="middle" font-size="11" font-weight="bold" fill="#15803d">RAM_WRITE  (HIGH)</text>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 3 — /ROM_READ
+     /ROM_SEL ─┐
+               ├─[OR G4]──────────────────────────────► /ROM_READ (LOW)
+     /RD ──────┘          OR output IS the active-low signal (double-NOT cancels)
+════════════════════════════════════════════════════════ -->
+<text x="140" y="244" text-anchor="end" font-size="11" fill="#1d4ed8" font-weight="bold">/ROM_SEL</text>
+<text x="140" y="259" text-anchor="end" font-size="11" fill="#334155">/RD</text>
+
+<rect x="152" y="234" width="88" height="34" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="196" y="247" text-anchor="middle" font-size="9" font-weight="bold" fill="#15803d">IC2-G4</text>
+<text x="196" y="260" text-anchor="middle" font-size="10" fill="#15803d">OR</text>
+
+<line x1="142" y1="244" x2="152" y2="244" stroke="#1d4ed8" stroke-width="1.5"/>
+<line x1="142" y1="259" x2="152" y2="259" stroke="#334155" stroke-width="1.5"/>
+
+<!-- long wire direct to output — no NOT gate -->
+<line x1="240" y1="251" x2="655" y2="251" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- note in IC3 column -->
+<rect x="312" y="236" width="136" height="30" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+<text x="380" y="249" text-anchor="middle" font-size="9" fill="#94a3b8">no gate needed —</text>
+<text x="380" y="261" text-anchor="middle" font-size="9" fill="#94a3b8">double-NOT cancels</text>
+
+<rect x="657" y="236" width="218" height="30" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="766" y="256" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">/ROM_READ  (LOW)</text>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 4 — IO_WR_H  (shared intermediate)
+     /IO_SEL ─┐
+              ├─[OR G3]──[NOT G3]──► IO_WR_H ──────────► (feeds rows 5 & 6)
+     /WR ─────┘
+════════════════════════════════════════════════════════ -->
+<text x="140" y="334" text-anchor="end" font-size="11" fill="#1d4ed8" font-weight="bold">/IO_SEL</text>
+<text x="140" y="349" text-anchor="end" font-size="11" fill="#334155">/WR</text>
+
+<rect x="152" y="324" width="88" height="34" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="196" y="337" text-anchor="middle" font-size="9" font-weight="bold" fill="#15803d">IC2-G3</text>
+<text x="196" y="350" text-anchor="middle" font-size="10" fill="#15803d">OR</text>
+
+<line x1="142" y1="334" x2="152" y2="334" stroke="#1d4ed8" stroke-width="1.5"/>
+<line x1="142" y1="349" x2="152" y2="349" stroke="#334155" stroke-width="1.5"/>
+<line x1="240" y1="341" x2="312" y2="341" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<rect x="312" y="324" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="337" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G3</text>
+<text x="356" y="350" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<!-- IO_WR_H wire to junction dot, then vertical bus -->
+<line x1="400" y1="341" x2="555" y2="341" stroke="#d97706" stroke-width="2"/>
+<circle cx="555" cy="341" r="5" fill="#d97706"/>
+<!-- label -->
+<rect x="408" y="324" width="90" height="18" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+<text x="453" y="336" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">IO_WR_H</text>
+<!-- vertical bus down from junction -->
+<line x1="555" y1="341" x2="555" y2="650" stroke="#d97706" stroke-width="2" stroke-dasharray="6,3"/>
+<!-- bus label -->
+<text x="560" y="480" font-size="9" fill="#d97706" font-weight="bold">IO_WR_H</text>
+<text x="560" y="492" font-size="9" fill="#d97706">bus</text>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 5 — /OUTPUT_WRITE
+     Step 1: A1 ──[NOT G4]──► /A1 ─┐
+                                    ├─[AND G4]──► X ──[NOT G5]──► /OUTPUT_WRITE (LOW)
+             IO_WR_H (bus) ─────────┘
+════════════════════════════════════════════════════════ -->
+
+<!-- Step 1a: NOT(A1) -->
+<text x="140" y="430" text-anchor="end" font-size="11" fill="#334155">A1</text>
+<line x1="142" y1="430" x2="312" y2="430" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<rect x="312" y="415" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="428" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G4</text>
+<text x="356" y="441" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<!-- /A1 wire → AND G4 upper input -->
+<line x1="400" y1="432" x2="472" y2="432" stroke="#334155" stroke-width="1.5"/>
+<text x="408" y="428" font-size="9" fill="#6d28d9">/A1</text>
+
+<!-- Step 1b: IO_WR_H tap from bus -->
+<circle cx="555" cy="445" r="4" fill="#d97706"/>
+<line x1="555" y1="445" x2="560" y2="445" stroke="#d97706" stroke-width="1.5"/>
+<!-- bend left to AND G4 lower input -->
+<line x1="555" y1="445" x2="472" y2="445" stroke="#d97706" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- AND gate G4 -->
+<rect x="472" y="418" width="88" height="34" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="516" y="431" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">IC4-G4</text>
+<text x="516" y="444" text-anchor="middle" font-size="10" fill="#92400e">AND</text>
+
+<!-- X wire AND → NOT G5 -->
+<line x1="560" y1="435" x2="580" y2="435" stroke="#334155" stroke-width="1.5"/>
+<line x1="580" y1="435" x2="580" y2="490" stroke="#334155" stroke-width="1.5"/>
+<line x1="580" y1="490" x2="400" y2="490" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="563" y="431" font-size="9" fill="#64748b">X</text>
+
+<!-- NOT gate G5 -->
+<rect x="312" y="473" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="486" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G5</text>
+<text x="356" y="499" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<!-- /OUTPUT_WRITE output -->
+<line x1="400" y1="490" x2="655" y2="490" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="657" y="475" width="218" height="30" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="766" y="495" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">/OUTPUT_WRITE  (LOW)</text>
+
+<!-- ════════════════════════════════════════════════════════
+     ROW 6 — PRINTER_WRITE
+     Step 1: IO_WR_H ─┐
+                       ├─[AND G2]──► P1 ─┐
+             A1 ───────┘                  ├─[AND G3]──► PRINTER_WRITE (HIGH)
+             A0 ──[NOT G6]──► /A0 ────────┘
+════════════════════════════════════════════════════════ -->
+
+<!-- AND G2: IO_WR_H + A1 -->
+<!-- IO_WR_H tap -->
+<circle cx="555" cy="588" r="4" fill="#d97706"/>
+<line x1="555" y1="588" x2="472" y2="588" stroke="#d97706" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- A1 input -->
+<text x="140" y="603" text-anchor="end" font-size="11" fill="#334155">A1</text>
+<line x1="142" y1="603" x2="472" y2="603" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- AND gate G2 -->
+<rect x="472" y="575" width="88" height="34" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="516" y="588" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">IC4-G2</text>
+<text x="516" y="601" text-anchor="middle" font-size="10" fill="#92400e">AND</text>
+
+<!-- P1 wire: AND G2 → AND G3 upper input -->
+<line x1="560" y1="592" x2="600" y2="592" stroke="#334155" stroke-width="1.5"/>
+<line x1="600" y1="592" x2="600" y2="640" stroke="#334155" stroke-width="1.5"/>
+<line x1="600" y1="640" x2="560" y2="640" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="568" y="588" font-size="9" fill="#64748b">P1</text>
+
+<!-- NOT G6: A0 → /A0 -->
+<text x="140" y="651" text-anchor="end" font-size="11" fill="#334155">A0</text>
+<line x1="142" y1="651" x2="312" y2="651" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<rect x="312" y="635" width="88" height="34" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="356" y="648" text-anchor="middle" font-size="9" font-weight="bold" fill="#6d28d9">IC3-G6</text>
+<text x="356" y="661" text-anchor="middle" font-size="10" fill="#6d28d9">NOT</text>
+
+<!-- /A0 wire → AND G3 lower input -->
+<line x1="400" y1="652" x2="472" y2="652" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="408" y="648" font-size="9" fill="#6d28d9">/A0</text>
+
+<!-- AND gate G3 -->
+<rect x="472" y="626" width="88" height="34" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="516" y="639" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">IC4-G3</text>
+<text x="516" y="652" text-anchor="middle" font-size="10" fill="#92400e">AND</text>
+
+<!-- PRINTER_WRITE output -->
+<line x1="560" y1="643" x2="655" y2="643" stroke="#334155" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="657" y="628" width="218" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="766" y="648" text-anchor="middle" font-size="11" font-weight="bold" fill="#15803d">PRINTER_WRITE  (HIGH)</text>
+
+<!-- ════════════════════════════════════════════════════════
+     IC1 DECODER NOTE (bottom)
+════════════════════════════════════════════════════════ -->
+<rect x="10" y="695" width="880" height="36" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="1"/>
+<text x="450" y="708" text-anchor="middle" font-size="10" font-weight="bold" fill="#1d4ed8">IC1 · 74HC138  (3-to-8 decoder)  —  A=A13, B=A14, C=A15  ·  /E1,/E2=GND, E3=VCC</text>
+<text x="450" y="723" text-anchor="middle" font-size="10" fill="#1d4ed8">Y0 → /RAM_SEL (active low)  ·  Y1 → /ROM_SEL (active low)  ·  Y2 → /IO_SEL (active low)  ·  Y3–Y7 = NC</text>
+
+</svg>

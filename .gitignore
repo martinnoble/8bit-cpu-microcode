@@ -1,1 +1,3 @@
 output/
+microcode/
+__pycache__/

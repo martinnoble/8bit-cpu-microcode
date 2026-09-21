@@ -1,0 +1,26 @@
+LDA 'H'
+TAP
+LDA 'e'
+TAP
+LDA 'l'
+TAP
+LDA 'l'
+TAP
+LDA 'o'
+TAP
+LDA ' '
+TAP
+LDA 'W'
+TAP
+LDA 'o'
+TAP
+LDA 'r'
+TAP
+LDA 'l'
+TAP
+LDA 'd'
+TAP
+LDA '\n'
+TAP
+TAP
+TAP
