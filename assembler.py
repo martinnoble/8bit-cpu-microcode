@@ -18,11 +18,11 @@ print()
 
 
 OPCODES = {
-    "JMP" : { "IN": None, "IM": 0xB1, "ABS": None, "ABS_ZP": None},
-    "BCS" : { "IN": None, "IM": 0xB2, "ABS": None, "ABS_ZP": None},
-    "BCC" : { "IN": None, "IM": 0xB3, "ABS": None, "ABS_ZP": None},
-    "BEQ" : { "IN": None, "IM": 0xB4, "ABS": None, "ABS_ZP": None},
-    "BNE" : { "IN": None, "IM": 0xB5, "ABS": None, "ABS_ZP": None},
+    "JMP" : { "IN": None, "IM": None, "ABS": 0xC1, "ABS_ZP": None},
+    "BCS" : { "IN": None, "IM": None, "ABS": 0xC2, "ABS_ZP": None},
+    "BCC" : { "IN": None, "IM": None, "ABS": 0xC3, "ABS_ZP": None},
+    "BEQ" : { "IN": None, "IM": None, "ABS": 0xC4, "ABS_ZP": None},
+    "BNE" : { "IN": None, "IM": None, "ABS": 0xC5, "ABS_ZP": None},
     "LDA" : { "IN": 0x60, "IM": 0xB6, "ABS": 0xC6, "ABS_ZP": 0x06, "IND": 0xF6, "IND_ZP": 0xE6},
     "STA" : { "IN": 0x70, "IM": None, "ABS": 0xC7, "ABS_ZP": 0x07, "IND": 0xF7, "IND_ZP": 0xE7},
     "ADD" : { "IN": 0x80, "IM": 0xB8, "ABS": 0xC8, "ABS_ZP": None, "ABS_IP": 0xD8, "IND": 0xE8, "IND_ZP": None},
@@ -34,6 +34,8 @@ OPCODES = {
     "TAS" : { "IN": 0xF1, "IM": None, "ABS": None, "ABS_ZP": None},
     "CLF" : { "IN": 0xF2, "IM": None, "ABS": None, "ABS_ZP": None},
     "SEF" : { "IN": 0xF3, "IM": None, "ABS": None, "ABS_ZP": None},
+    "TAX" : { "IN": 0xF4, "IM": None, "ABS": None, "ABS_ZP": None},
+    "TXA" : { "IN": 0xF5, "IM": None, "ABS": None, "ABS_ZP": None},
     "HLT" : { "IN": 0xFF, "IM": None, "ABS": None, "ABS_ZP": None},
     "NOP" : { "IN": 0x00, "IM": None, "ABS": None, "ABS_ZP": None},
 }
@@ -41,6 +43,8 @@ OPCODES = {
 PROGRAM = [OPCODES["HLT"]["IN"]] * 8192
 LOCATIONS = {}
 VARIABLES = {}
+
+ROMSTART = 0x2000
 
 def parse_instruction(line, counter, linenumber):
     parts = line.split(" ", 1)
@@ -52,7 +56,7 @@ def parse_instruction(line, counter, linenumber):
 
     if parts[0].startswith(":"):
         label = parts[0][1:]
-        LOCATIONS[label] = counter
+        LOCATIONS[label] = counter + ROMSTART
         return None
     
     #if parts[0].startswith("*"):
@@ -202,12 +206,12 @@ def parse_instruction(line, counter, linenumber):
         label = parts[1][1:]
         if label not in LOCATIONS:
             print("Undefined label: " + label)
-            return [opcode["IM"], parts[1]]
+            return [opcode["ABS"], parts[1], None]
         num = LOCATIONS[label]
-        if num < 16 and opcode["IN"] is not None:
-            return opcode["IN"] | num
-        else:
-            return [opcode["IM"], num]
+        numlow = num & 0xFF
+        numhigh = (num & 0xFF00) >> 8
+        #little endian format
+        return [opcode["ABS"], numlow, numhigh]
         
     #Indirect addressing
     #TODO add support for Indirect X indexed
@@ -324,14 +328,10 @@ with open(outfilename,"wb") as outfile, open(filename, 'r') as sourcefile:
                     print("ERROR: label not defined: " + label)
                     exit(1)
                 num = LOCATIONS[label]
-            elif label.startswith("."):
-                varname = label[1:]
-                if varname not in VARIABLES:
-                    print("ERROR: variable not defined: " + varname)
-                    exit(1)
-                num = VARIABLES[varname]
+                #locations should only appear in absolute calls, so can directly insert the 2 bytes
+                PROGRAM[i] = num & 0xFF
+                PROGRAM[i+1] = (num & 0xFF00) >> 8
 
-            PROGRAM[i] = num
 
     print(PROGRAM[:counter]) 
 

@@ -1,0 +1,31 @@
+
+:start
+LDA $0x00
+CMP $0xFF
+JMP :later
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+:earlier
+LDA $0xFF
+CMP $0x00
+JMP :start
+:later
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+JMP :earlier
