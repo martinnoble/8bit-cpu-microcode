@@ -23,7 +23,7 @@ SUB       = 0b00000010 << 8
 ADINC     = 0b00000100 << 8   #Address Increment by 1 - LED switched to active high, check this signal
 COUNT_EN  = 0b00001000 << 8
 JMP_LOW   = 0b00010000 << 8   #TODO: JMP_LOW for 16bit countner
-JMP_HIGH  = 0b00100000 << 8  #TODO: JMP_HIGH for 16bit counter 
+JMP_HIGH  = 0b00100000 << 8   #TODO: JMP_HIGH for 16bit counter 
 B_REG_IN  = 0b01000000 << 8
 B_REG_OUT = 0b10000000 << 8
 
@@ -31,13 +31,13 @@ B_REG_OUT = 0b10000000 << 8
 DIRC  = 0b11000111
 
 #decode C output lines
-F_REG_IN  = 0b00000001 << 16
-PC_ADR   = 0b00000010 << 16  #Program counter high and low output to address bus
-S_REG_IN  = 0b00000100 << 16  
-F_CLEAR   = 0b00001000 << 16
-F_SET     = 0b00010000 << 16 #LED added - check this signal
-ZERO_PAGE = 0b00100000 << 16  #LED added - check this signal
-PAGE_IN   = 0b01000000 << 16  
+F_REG_IN    = 0b00000001 << 16
+PC_ADR      = 0b00000010 << 16  #Program counter high and low output to address bus
+S_REG_IN    = 0b00000100 << 16  
+F_CLEAR     = 0b00001000 << 16
+F_SET       = 0b00010000 << 16 #LED added - check this signal
+ZERO_PAGE   = 0b00100000 << 16  #LED added - check this signal
+PAGE_IN     = 0b01000000 << 16  
 CYCLE_RESET = 0b10000000 << 16  
 
 
@@ -49,11 +49,11 @@ DIRD  = 0b00000111
 X_REG_IN  = 0b00000001 << 24  #X Reg in
 X_REG_OUT = 0b00000010 << 24  #X Reg out
 ADINC_X   = 0b00000100 << 24  #Address Increment by X
-UD04  = 0b00001000 << 24  
-UD05  = 0b00010000 << 24
-UD06  = 0b00100000 << 24
-UD07  = 0b01000000 << 24
-RESET  = 0b10000000 << 24  
+UD04      = 0b00001000 << 24  
+UD05      = 0b00010000 << 24
+UD06      = 0b00100000 << 24
+UD07      = 0b01000000 << 24
+RESET     = 0b10000000 << 24  
 
 
 
@@ -153,8 +153,8 @@ STA - Store A Register
 #0b11010011 : 0xD3 - NOP
 #0b11010100 : 0xD4 - NOP
 #0b11010101 : 0xD5 - NOP
-#0b11010110 : 0xD6 - NOP
-#0b11010111 : 0xD7 - NOP
+#0b11010110 : 0xD6 - LDA Absolute,X
+#0b11010111 : 0xD7 - STA Absolute,X
 #0b11011000 : 0xD8 - ADD Absolute In Place
 #0b11011001 : 0xD9 - SUB Absolute In Place
 #0b11011010 : 0xDA - NOP
@@ -181,8 +181,8 @@ STA - Store A Register
 #0b11101110 : 0xEE - NOP
 #0b11101111 : 0xEF - NOP
 
-#0b11110000 : 0xF0 - NOP
-#0b11110001 : 0xF1 - TAS Implied
+#0b11110000 : 0xF0 - TAS Implied
+#0b11110001 : 0xF1 - INX Implied
 #0b11110010 : 0xF2 - CLF Implied
 #0b11110011 : 0xF3 - SEF Implied
 #0b11110100 : 0xF4 - TAX Implied
@@ -238,6 +238,9 @@ LDA_AB_ZP  = [PC_ADR | READ | I_REG_IN | COUNT_EN,  PC_ADR | READ | ADDR_IN | CO
 #LoaD A register with value from memory address in next two bytes (little endian)
 LDA_AB  = [PC_ADR | READ | I_REG_IN | COUNT_EN,  PC_ADR | READ | ADDR_IN | COUNT_EN,   PC_ADR | READ | PAGE_IN | COUNT_EN, READ | A_REG_IN | CYCLE_RESET,   0,   0, 0, 0 ]
 
+#LoaD A register with value from memory address in next two bytes (little endian).  Low byte is offset by the value in X - this wraps around
+LDA_AB_X  = [PC_ADR | READ | I_REG_IN | COUNT_EN,  PC_ADR | READ | ADDR_IN | COUNT_EN,   PC_ADR | READ | PAGE_IN | COUNT_EN, ADINC_X | READ | A_REG_IN | CYCLE_RESET,   0,   0, 0, 0 ]
+
 
 #LoaD A register using 16bit memory address stored in zero page (indirect)
 LDA_IND_ZP = [PC_ADR | READ | I_REG_IN | COUNT_EN,  PC_ADR | READ | ADDR_IN | COUNT_EN,   ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,   READ | A_REG_IN | CYCLE_RESET, 0, 0 ]
@@ -258,6 +261,10 @@ STA_AB_ZP  = [PC_ADR | READ | I_REG_IN | COUNT_EN,   PC_ADR | READ | ADDR_IN | C
 
 #STA - STore value from A register into memory address given by next type bytes (little endian)
 STA_AB  =    [PC_ADR | READ | I_REG_IN | COUNT_EN,   PC_ADR | READ | ADDR_IN | COUNT_EN ,  PC_ADR | READ | PAGE_IN | COUNT_EN, A_REG_OUT | WRITE | CYCLE_RESET, 0, 0, 0, 0 ]  
+
+#STA - STore value from A register into memory address given by next type bytes (little endian). Low byte of addres is offset by value in X register
+STA_AB_X  =    [PC_ADR | READ | I_REG_IN | COUNT_EN,   PC_ADR | READ | ADDR_IN | COUNT_EN ,  PC_ADR | READ | PAGE_IN | COUNT_EN, ADINC_X | A_REG_OUT | WRITE | CYCLE_RESET, 0, 0, 0, 0 ]  
+
 
 #STA - STore value from A register into memory address which is in turn given by next byte (indirect zero page) 
 STA_IND_ZP = [PC_ADR | READ | I_REG_IN | COUNT_EN,   PC_ADR | READ | ADDR_IN | COUNT_EN ,  ZERO_PAGE | READ | B_REG_IN,  ADINC | ZERO_PAGE | READ | PAGE_IN,   B_REG_OUT | ADDR_IN,  A_REG_OUT | WRITE | CYCLE_RESET, 0 ,0]
@@ -363,6 +370,11 @@ CMP_AB = [ PC_ADR | READ | I_REG_IN | COUNT_EN,   PC_ADR | READ | F_SET | F_REG_
 CPY_AB = [ PC_ADR | READ | I_REG_IN | COUNT_EN,  PC_ADR | READ | ADDR_IN | COUNT_EN,  PC_ADR | READ | WRITE | COUNT_EN | CYCLE_RESET,    0,    0,   0, 0, 0 ]
 
 #CPY_IND - CoPY value from ROM to RAM. Address given by the next byte, value given by 3rd byte. Indirect version where address of value is given by the next byte.
+
+
+#INcrement X - increments X register, overwriting A reg in the process
+INX     = [ PC_ADR | READ | I_REG_IN | COUNT_EN,  I_REG_OUT | F_CLEAR | F_REG_IN | B_REG_IN, X_REG_OUT | A_REG_IN,  SUM_OUT | X_REG_IN | F_REG_IN | CYCLE_RESET , 0 ,  0,   0,   0 ]
+#ADD_IN = [ PC_ADR | READ | I_REG_IN | COUNT_EN,  I_REG_OUT | F_CLEAR | F_REG_IN | B_REG_IN,   SUM_OUT | A_REG_IN | F_REG_IN | CYCLE_RESET,    0,    0,   0,   0, 0 ]
 
 #TAO - Transfer A register to Output register
 #REMOVED - output by memory mapped
@@ -544,6 +556,16 @@ for instruction in range(0, 256):
                         value = SBC_AB[subinst]
 
 
+                    ### Absolute,X opcodes
+
+                    #0b11010110 : 0xD6 - LDA Absolute,X
+                    if (instruction == 0b11010110):
+                        value = LDA_AB_X[subinst]
+
+                    #0b11010111 : 0xD7 - STA Absolute,X
+                    if (instruction == 0b11010111):
+                        value = STA_AB_X[subinst]
+
 
                     ### Absolute In Place opcodes
 
@@ -608,15 +630,13 @@ for instruction in range(0, 256):
 
                     ### Implied addressed opcodes
 
-                    #TAO REMOVED - output now memory mapped
-                    #0b11110000 : 0xF0 - TAO Implied
-                    #if (instruction == 0b11110000):
-                    #    #0b11110000 : 0xF0 - TAO Implied
-                    #    value = TAO[subinst]
-
-                    #0b11110001 : 0xF1 - TAS Implied
-                    if (instruction == 0b11110001):
+                    #0b11110000 : 0xF0 - TAS Implied
+                    if (instruction == 0b11110000):
                         value = TAS[subinst]
+
+                    #0b11110001 : 0xF1 - INX Implied
+                    if (instruction == 0b11110001):
+                        value = INX[subinst]
 
                     #0b11110010 : 0xF2 - CLF Implied
                     if (instruction == 0b11110010):
@@ -626,7 +646,6 @@ for instruction in range(0, 256):
                     if (instruction == 0b11110011):
                         value = SEF[subinst]
 
-
                     #0b11110100 : 0xF4 - TAX Implied
                     if (instruction == 0b11110100):
                         value = TAX[subinst]
@@ -634,7 +653,6 @@ for instruction in range(0, 256):
                     #0b11110101 : 0xF5 - TXA Implied
                     if (instruction == 0b11110101):
                         value = TXA[subinst]
-
 
                     #0b11111111 : 0xFF - HALT Implied
                     if (instruction == 0b11111111):
